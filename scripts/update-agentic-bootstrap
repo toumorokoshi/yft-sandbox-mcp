@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# update-agentic-bootstrap - grabs the latest copy of agentic-bootstrap and runs install.sh
+set -e
+
+# Default Target is the directory above 'scripts' where this script resides.
+TARGET_DIR="$(dirname "$(dirname "$(realpath "$0")")")"
+
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf -- "$TEMP_DIR"' EXIT
+
+echo "Cloning latest agentic-bootstrap..."
+git clone --depth 1 https://github.com/toumorokoshi/agentic-bootstrap.git "$TEMP_DIR/agentic-bootstrap"
+
+echo "Running agentic-bootstrap install script..."
+"$TEMP_DIR/agentic-bootstrap/scripts/install.sh" "$TARGET_DIR"
+
+echo "Successfully updated agentic-bootstrap templates in $TARGET_DIR"

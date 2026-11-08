@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+echo "==> Running local CI before push..."
+if ! command -v just >/dev/null 2>&1; then
+    echo "ERROR: 'just' command not found. Please install just to run local CI." >&2
+    exit 1
+fi
+
+just ci
+echo "==> Local CI passed successfully!"
