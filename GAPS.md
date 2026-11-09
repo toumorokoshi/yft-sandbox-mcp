@@ -4,7 +4,7 @@
 
 - [x] **Cloud Run Deployment & Containerization**:
   - Added multi-stage `Dockerfile` and `.dockerignore` producing a minimal, secure container image for `yft-sandbox-mcp`.
-  - Added OpenTofu manifests in `tofu/` (with `terraform/` compatibility) configuring GCP Cloud Run v2 service, IAM public invoker, Artifact Registry repository, and custom domain mapping for `nachochips.tsutsumi.io` (managed by external DNS).
+  - Added OpenTofu manifests in `tofu/` configuring GCP Cloud Run v2 service, IAM public invoker, Artifact Registry repository, and custom domain mapping for `nachochips.tsutsumi.io` (managed by external DNS).
 - [ ] **AnkiConnect Flashcard Action (`anki_create_flashcard`)**:
   - Implement HTTP client for AnkiConnect (`127.0.0.1:8765`).
   - Add `anki_create_flashcard` tool with deck selection, model selection, front/back fields, and tag support.

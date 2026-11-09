@@ -1,7 +1,6 @@
 target/
 .git/
 .githooks/
-terraform/
 tofu/
 docs/
 specs/

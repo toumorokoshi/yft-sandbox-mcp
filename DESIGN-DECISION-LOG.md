@@ -59,6 +59,6 @@
 ## 2026-11-09: Transition Infrastructure as Code to OpenTofu
 
 ### 1. OpenTofu Adoption for GCP Infrastructure
-- **Decision**: Migrate IaC manifests from Terraform to OpenTofu (`tofu/`), update version constraint to `>= 1.6.0`, adopt `tofu.tfvars.example`, update CLI workflows to `tofu`, and maintain a `terraform/` symlink for backwards compatibility.
-- **Context**: Operator requested adapting the infrastructure files to OpenTofu.
+- **Decision**: Migrate IaC manifests exclusively to OpenTofu (`tofu/`), remove legacy `terraform/` directory/symlinks, update version constraint to `>= 1.6.0`, adopt `tofu.tfvars.example`, and update CLI workflows to `tofu`.
+- **Context**: Operator requested adapting the infrastructure files to OpenTofu and removing the legacy `terraform` directory.
 - **Rationale**: OpenTofu is a truly open-source (MPL-2.0, Linux Foundation) drop-in replacement with full compatibility with the Google provider (`hashicorp/google`) and provides a clean open-source foundation without BSL license restrictions.
