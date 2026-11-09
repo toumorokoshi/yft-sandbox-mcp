@@ -21,3 +21,20 @@
 - **Decision**: Separate the functional core logic of each action into pure functions from the MCP parameter extraction and handler routing.
 - **Context**: Follow codebase tenets emphasizing functional programming, testability, and modularity.
 - **Rationale**: Pure functions (such as `format_echo`) can be unit tested without async runtime or serialization overhead.
+
+## 2026-11-08: Streamable HTTP Transport & Cloud Run Integration
+
+### 1. HTTP Server Adoption for Cloud Run Hosting
+- **Decision**: Convert the server's default runtime to a Streamable HTTP server hosted on `axum` with `rmcp::transport::streamable_http_server`, while maintaining backward compatibility with `stdio` via `MCP_TRANSPORT=stdio`.
+- **Context**: Serving `yft-sandbox-mcp` on Google Cloud Run at `nachochips.yusuketsutsumi.com` requires an HTTP service listening on `$PORT` (default `8080`) that responds to HTTP health check probes and handles standard MCP JSON-RPC over HTTP.
+- **Rationale**: `rmcp` v3.9.0 provides native `transport-streamable-http-server` using Tower and Axum. It natively implements session management, SSE event streaming, and JSON-RPC dispatch conforming to the Model Context Protocol 2024-11-05 Streamable HTTP transport specification.
+
+### 2. Cloud Health Check Endpoints
+- **Decision**: Expose `GET /health` and `GET /livez` returning HTTP 200 OK.
+- **Context**: Cloud Run requires health checks for container startup and liveness probes.
+- **Rationale**: Prevents probe failures and container restarts without interfering with MCP protocol routes at `/mcp` or `/`.
+
+### 3. Allowed Hosts Defense for Custom Domain
+- **Decision**: Support host validation with defaults including `nachochips.yusuketsutsumi.com`, `localhost`, and loopback interfaces, configurable via `ALLOWED_HOSTS`.
+- **Context**: The MCP Streamable HTTP specification rejects unallowed Host headers to guard against DNS rebinding attacks against local services.
+- **Rationale**: Ensures the service is secure by default while functioning immediately upon deployment to `nachochips.yusuketsutsumi.com`.

@@ -4,8 +4,8 @@ An extensible [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) s
 
 ## Features
 
-- **Built on Official `rmcp` SDK**: Uses the official Model Context Protocol Rust SDK (`rmcp`) with async stdio transport.
-- **Clean Transport Separation**: Stdio JSON-RPC protocol transport on standard I/O; all server logs and diagnostic traces are strictly routed to `stderr` to prevent protocol stream corruption.
+- **Dual Transport (HTTP & Stdio)**: Streamable HTTP transport hosted on Axum (Cloud Run ready on `$PORT`) with built-in health check probes (`/health`, `/livez`) and backward compatibility for stdio transport via `MCP_TRANSPORT=stdio`.
+- **Clean Protocol Separation**: All diagnostic and runtime traces are routed to `stderr` via `tracing_subscriber`, keeping JSON-RPC protocol framing pristine.
 - **Modular Action Architecture**: Functional business logic is isolated into pure helper functions and tested independently from MCP serialization.
 - **Local CI & Zero Cost**: To avoid unnecessary GitHub Actions costs on private repositories, CI is validated locally before every push via Git pre-push hooks and `just ci`.
 
@@ -41,34 +41,52 @@ Build the server binary:
 just build
 ```
 
-Run the server directly (communicates over stdio):
+Run the server as an HTTP server (default, Cloud Run ready on `0.0.0.0:8080`):
 
 ```bash
 cargo run
 ```
 
+Run the server with custom port or allowed hosts:
+
+```bash
+PORT=8080 ALLOWED_HOSTS="nachochips.yusuketsutsumi.com,localhost" cargo run
+```
+
+Run the server in local stdio mode (for local desktop MCP clients):
+
+```bash
+MCP_TRANSPORT=stdio cargo run
+```
+
 ## Client Configuration
 
-To register this server with an MCP client (such as Claude Desktop, Antigravity, or Cursor), add the following to your MCP client configuration:
+### Connecting via Streamable HTTP (Remote / Cloud Run)
+
+To connect to this server over HTTP (e.g. deployed on Cloud Run at `nachochips.yusuketsutsumi.com` or running locally on port 8080):
 
 ```json
 {
   "mcpServers": {
     "yft-sandbox": {
-      "command": "/absolute/path/to/yft-sandbox-mcp/target/debug/yft-sandbox-mcp"
+      "url": "https://nachochips.yusuketsutsumi.com/mcp"
     }
   }
 }
 ```
 
-Or using `cargo run`:
+### Connecting via Stdio (Local Desktop)
+
+To register this server with a local MCP client communicating over standard input/output:
 
 ```json
 {
   "mcpServers": {
     "yft-sandbox": {
-      "command": "cargo",
-      "args": ["run", "--quiet", "--manifest-path", "/absolute/path/to/yft-sandbox-mcp/Cargo.toml"]
+      "command": "/absolute/path/to/yft-sandbox-mcp/target/debug/yft-sandbox-mcp",
+      "env": {
+        "MCP_TRANSPORT": "stdio"
+      }
     }
   }
 }

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+if [ -d "$HOME/.cargo/bin" ]; then
+    export PATH="$HOME/.cargo/bin:$PATH"
+fi
+
 echo "==> Running local CI before push..."
 if ! command -v just >/dev/null 2>&1; then
     echo "ERROR: 'just' command not found. Please install just to run local CI." >&2
