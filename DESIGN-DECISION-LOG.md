@@ -50,3 +50,8 @@
 - **Decision**: Do not manage Cloud DNS records via Terraform since the domain `tsutsumi.io` is managed externally. Instead, export structured outputs in Terraform detailing the exact CNAME record (`nachochips` -> `ghs.googlehosted.com.`) for external DNS configuration.
 - **Context**: User confirmed `tsutsumi.io` is not managed by GCP.
 - **Rationale**: Keeps Terraform isolated to GCP resources while giving the operator clear, copy-paste DNS values for their external DNS provider.
+
+### 3. Consolidated Cloud Run Deployment Documentation
+- **Decision**: Provide complete step-by-step instructions in `docs/cloud-run-deployment.md` covering prerequisites, Search Console domain verification, Terraform setup, container builds, and DNS configuration.
+- **Context**: Operator requested explicit deployment and DNS setup instructions in the `docs/` directory.
+- **Rationale**: Centralizing comprehensive deployment instructions in `docs/` guarantees operators have a single reference guide for deployment lifecycle and maintenance.
