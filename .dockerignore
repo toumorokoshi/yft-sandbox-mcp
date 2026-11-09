@@ -1,0 +1,9 @@
+target/
+.git/
+.githooks/
+terraform/
+docs/
+specs/
+design/
+*.md
+.gitignore

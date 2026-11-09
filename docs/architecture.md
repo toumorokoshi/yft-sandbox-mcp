@@ -7,7 +7,7 @@
 ```
 +------------------------------------------------+      +------------------------------------------------+
 |             Remote AI / Web Client             |      |             Local Desktop Client               |
-|      (e.g., nachochips.yusuketsutsumi.com)     |      |       (e.g., Claude Desktop, Antigravity)      |
+|           (e.g., nachochips.tsutsumi.io)           |      |       (e.g., Claude Desktop, Antigravity)      |
 +------------------------------------------------+      +------------------------------------------------+
                        |                                                        |
              HTTP / SSE (/mcp)                                         JSON-RPC over stdio

@@ -50,7 +50,7 @@ cargo run
 Run the server with custom port or allowed hosts:
 
 ```bash
-PORT=8080 ALLOWED_HOSTS="nachochips.yusuketsutsumi.com,localhost" cargo run
+PORT=8080 ALLOWED_HOSTS="nachochips.tsutsumi.io,localhost" cargo run
 ```
 
 Run the server in local stdio mode (for local desktop MCP clients):
@@ -63,13 +63,13 @@ MCP_TRANSPORT=stdio cargo run
 
 ### Connecting via Streamable HTTP (Remote / Cloud Run)
 
-To connect to this server over HTTP (e.g. deployed on Cloud Run at `nachochips.yusuketsutsumi.com` or running locally on port 8080):
+To connect to this server over HTTP (e.g. deployed on Cloud Run at `nachochips.tsutsumi.io` or running locally on port 8080):
 
 ```json
 {
   "mcpServers": {
     "yft-sandbox": {
-      "url": "https://nachochips.yusuketsutsumi.com/mcp"
+      "url": "https://nachochips.tsutsumi.io/mcp"
     }
   }
 }

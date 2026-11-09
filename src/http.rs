@@ -38,7 +38,8 @@ pub fn default_server_config(cancellation_token: CancellationToken) -> Streamabl
         .with_json_response(true);
 
     let allowed_hosts_env = std::env::var("ALLOWED_HOSTS").unwrap_or_else(|_| {
-        "nachochips.yusuketsutsumi.com,localhost,127.0.0.1,0.0.0.0".to_string()
+        "nachochips.tsutsumi.io,nachochips.yusuketsutsumi.com,localhost,127.0.0.1,0.0.0.0"
+            .to_string()
     });
 
     if let Some(hosts) = parse_allowed_hosts(&allowed_hosts_env) {

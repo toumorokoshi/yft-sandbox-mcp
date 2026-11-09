@@ -15,7 +15,7 @@
 - **Environment Variables**:
   - `PORT`: HTTP port to bind to (defaults to `8080` for Cloud Run compatibility).
   - `HOST`: Bind address (defaults to `0.0.0.0`).
-  - `ALLOWED_HOSTS`: Comma-separated list of permitted host headers (defaults to `nachochips.yusuketsutsumi.com,localhost,127.0.0.1,0.0.0.0`; set to `*` to disable host validation).
+  - `ALLOWED_HOSTS`: Comma-separated list of permitted host headers (defaults to `nachochips.tsutsumi.io,localhost,127.0.0.1,0.0.0.0`; set to `*` to disable host validation).
   - `MCP_TRANSPORT`: Set to `stdio` for local client stdio mode; defaults to `http`.
 
 ## I/O & Logging Rules

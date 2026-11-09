@@ -35,6 +35,18 @@
 - **Rationale**: Prevents probe failures and container restarts without interfering with MCP protocol routes at `/mcp` or `/`.
 
 ### 3. Allowed Hosts Defense for Custom Domain
-- **Decision**: Support host validation with defaults including `nachochips.yusuketsutsumi.com`, `localhost`, and loopback interfaces, configurable via `ALLOWED_HOSTS`.
+- **Decision**: Support host validation with defaults including `nachochips.tsutsumi.io`, `localhost`, and loopback interfaces, configurable via `ALLOWED_HOSTS`.
 - **Context**: The MCP Streamable HTTP specification rejects unallowed Host headers to guard against DNS rebinding attacks against local services.
-- **Rationale**: Ensures the service is secure by default while functioning immediately upon deployment to `nachochips.yusuketsutsumi.com`.
+- **Rationale**: Ensures the service is secure by default while functioning immediately upon deployment to `nachochips.tsutsumi.io`.
+
+## 2026-11-08: Terraform Manifests & External Custom Domain (nachochips.tsutsumi.io)
+
+### 1. Zero-Cost Infrastructure with Cloud Run v2 and Domain Mapping
+- **Decision**: Declare all GCP infrastructure in `terraform/` using `google_cloud_run_v2_service`, `google_cloud_run_domain_mapping`, and `google_artifact_registry_repository`.
+- **Context**: The server needs to be deployed to Cloud Run and accessible at `nachochips.tsutsumi.io`.
+- **Rationale**: Cloud Run Domain Mapping (`google_cloud_run_domain_mapping`) provisions free Google-managed SSL/TLS certificates and incurs $0/month in idle load balancer fees, pairing with Cloud Run's scale-to-zero (`min_instance_count = 0`).
+
+### 2. External DNS Integration for `tsutsumi.io`
+- **Decision**: Do not manage Cloud DNS records via Terraform since the domain `tsutsumi.io` is managed externally. Instead, export structured outputs in Terraform detailing the exact CNAME record (`nachochips` -> `ghs.googlehosted.com.`) for external DNS configuration.
+- **Context**: User confirmed `tsutsumi.io` is not managed by GCP.
+- **Rationale**: Keeps Terraform isolated to GCP resources while giving the operator clear, copy-paste DNS values for their external DNS provider.

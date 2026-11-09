@@ -1,0 +1,30 @@
+# ------------------------------------------------------------------------------
+# Example Terraform Configuration for yft-sandbox-mcp on Google Cloud Run
+# Copy this file to terraform.tfvars and fill in your GCP project ID.
+# ------------------------------------------------------------------------------
+
+# The GCP Project ID to deploy resources into (Required)
+project_id = "your-gcp-project-id"
+
+# GCP Region for Cloud Run and Artifact Registry (Default: us-central1)
+region = "us-central1"
+
+# Name of the Cloud Run v2 service
+service_name = "yft-sandbox-mcp"
+
+# Custom domain name to map to Cloud Run (managed in your external DNS provider)
+domain_name = "nachochips.tsutsumi.io"
+
+# Artifact Registry Docker repository name
+artifact_registry_repo_id = "yft-sandbox-mcp"
+
+# Container image URI (Optional: leave blank to default to Artifact Registry)
+# container_image = ""
+
+# Scaling parameters (0 min_instances = scale-to-zero for $0 idle cost)
+min_instance_count = 0
+max_instance_count = 10
+
+# Compute allocations
+cpu_limit    = "1"
+memory_limit = "512Mi"
