@@ -1,8 +1,8 @@
-# Cloud Run Deployment & Custom Domain Guide
+# Cloud Run Deployment & Custom Domain Guide (OpenTofu)
 
-This guide provides end-to-end instructions for deploying `yft-sandbox-mcp` to **Google Cloud Run (v2)** and exposing it under the custom domain **`nachochips.tsutsumi.io`**.
+This guide provides end-to-end instructions for deploying `yft-sandbox-mcp` to **Google Cloud Run (v2)** and exposing it under the custom domain **`nachochips.tsutsumi.io`** using **OpenTofu**.
 
-Because `tsutsumi.io` is registered and hosted externally (outside of Google Cloud DNS), Terraform provisions the serverless compute, container registry, IAM permissions, and Cloud Run domain mapping, while external DNS is configured via a standard CNAME record.
+Because `tsutsumi.io` is registered and hosted externally (outside of Google Cloud DNS), OpenTofu provisions the serverless compute, container registry, IAM permissions, and Cloud Run domain mapping, while external DNS is configured via a standard CNAME record.
 
 ---
 
@@ -46,7 +46,7 @@ Because `tsutsumi.io` is registered and hosted externally (outside of Google Clo
 Before starting, ensure the following tools are installed:
 
 1. **[Google Cloud CLI (`gcloud`)](https://cloud.google.com/sdk/docs/install)**
-2. **[Terraform](https://developer.hashicorp.com/terraform/downloads)** (version `>= 1.5.0`)
+2. **[OpenTofu](https://opentofu.org/docs/intro/install/)** (version `>= 1.6.0`)
 3. **[Docker](https://docs.docker.com/get-docker/)** (for building container images)
 4. **Google Search Console Domain Verification**:
    - Google requires domain ownership verification before allowing Cloud Run custom domain mappings.
@@ -63,7 +63,7 @@ Before starting, ensure the following tools are installed:
 
 ### Step 1: Authenticate with Google Cloud
 
-Authenticate your user account and Application Default Credentials (ADC) for Terraform:
+Authenticate your user account and Application Default Credentials (ADC) for OpenTofu:
 
 ```bash
 gcloud auth login
@@ -75,16 +75,16 @@ gcloud config set project YOUR_PROJECT_ID
 
 ---
 
-### Step 2: Configure Terraform Variables
+### Step 2: Configure OpenTofu Variables
 
-Navigate into the `terraform/` directory:
+Navigate into the `tofu/` directory:
 
 ```bash
-cd terraform
-cp terraform.tfvars.example terraform.tfvars
+cd tofu
+cp tofu.tfvars.example tofu.tfvars
 ```
 
-Edit `terraform.tfvars` and set your GCP Project ID:
+Edit `tofu.tfvars` and set your GCP Project ID:
 
 ```hcl
 project_id  = "YOUR_PROJECT_ID"
@@ -95,16 +95,16 @@ domain_name = "nachochips.tsutsumi.io"
 
 ---
 
-### Step 3: Initialize and Apply Terraform
+### Step 3: Initialize and Apply with OpenTofu
 
-Initialize the Terraform Google provider and provision the infrastructure:
+Initialize the OpenTofu Google provider and provision the infrastructure:
 
 ```bash
-terraform init
-terraform apply
+tofu init
+tofu apply
 ```
 
-Type `yes` when prompted. Terraform will:
+Type `yes` when prompted. OpenTofu will:
 - Enable the Cloud Run API (`run.googleapis.com`) and Artifact Registry API (`artifactregistry.googleapis.com`).
 - Create the Artifact Registry Docker repository (`yft-sandbox-mcp`).
 - Deploy the Cloud Run v2 service with scale-to-zero (`min_instance_count = 0`).
@@ -241,6 +241,6 @@ gcloud run deploy yft-sandbox-mcp \
 To destroy all GCP resources and stop any potential resource consumption:
 
 ```bash
-cd terraform
-terraform destroy
+cd tofu
+tofu destroy
 ```

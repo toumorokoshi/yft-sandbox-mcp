@@ -2,6 +2,7 @@ target/
 .git/
 .githooks/
 terraform/
+tofu/
 docs/
 specs/
 design/

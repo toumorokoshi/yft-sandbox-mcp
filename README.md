@@ -96,7 +96,7 @@ To register this server with a local MCP client communicating over standard inpu
 
 To deploy `yft-sandbox-mcp` to Google Cloud Run and serve it at `nachochips.tsutsumi.io` with zero idle infrastructure costs, refer to:
 - [Cloud Run Deployment Guide](docs/cloud-run-deployment.md)
-- [Terraform Manifests](terraform/README.md)
+- [OpenTofu Manifests](tofu/README.md)
 
 ## Development & Local CI
 

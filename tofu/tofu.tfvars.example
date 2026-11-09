@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
-# Example Terraform Configuration for yft-sandbox-mcp on Google Cloud Run
-# Copy this file to terraform.tfvars and fill in your GCP project ID.
+# Example OpenTofu Configuration for yft-sandbox-mcp on Google Cloud Run
+# Copy this file to tofu.tfvars (or terraform.tfvars) and fill in your GCP project ID.
 # ------------------------------------------------------------------------------
 
 # The GCP Project ID to deploy resources into (Required)
