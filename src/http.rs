@@ -2,13 +2,16 @@
 
 use std::{net::SocketAddr, sync::Arc};
 
-use axum::{Router, response::IntoResponse, routing::get};
+use axum::{Router, middleware, response::IntoResponse, routing::get};
 use rmcp::transport::streamable_http_server::{
     StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
 };
 use tokio_util::sync::CancellationToken;
 
-use crate::server::SandboxServer;
+use crate::{
+    auth::{AuthToken, require_auth_token},
+    server::SandboxServer,
+};
 
 /// Health check handler for Cloud Run liveness and startup probes.
 pub async fn health_check() -> impl IntoResponse {
@@ -52,16 +55,26 @@ pub fn default_server_config(cancellation_token: CancellationToken) -> Streamabl
 }
 
 /// Build the Axum router with health checks and MCP streamable HTTP service.
-pub fn build_router(config: StreamableHttpServerConfig) -> Router {
+///
+/// Health checks are unauthenticated so Cloud Run probes succeed; every MCP
+/// route requires `auth_token`.
+pub fn build_router(config: StreamableHttpServerConfig, auth_token: AuthToken) -> Router {
     let session_manager = Arc::new(LocalSessionManager::default());
     let service: StreamableHttpService<SandboxServer, LocalSessionManager> =
         StreamableHttpService::new(|| Ok(SandboxServer::new()), session_manager, config);
 
+    let mcp_routes = Router::new()
+        .nest_service("/mcp", service.clone())
+        .fallback_service(service)
+        .layer(middleware::from_fn_with_state(
+            auth_token,
+            require_auth_token,
+        ));
+
     Router::new()
         .route("/health", get(health_check))
         .route("/livez", get(health_check))
-        .nest_service("/mcp", service.clone())
-        .fallback_service(service)
+        .merge(mcp_routes)
 }
 
 /// Run the HTTP server bound to the specified socket address until cancelled.
@@ -71,9 +84,10 @@ pub fn build_router(config: StreamableHttpServerConfig) -> Router {
 pub async fn run_http_server(
     addr: SocketAddr,
     config: StreamableHttpServerConfig,
+    auth_token: AuthToken,
     cancellation_token: CancellationToken,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let app = build_router(config);
+    let app = build_router(config, auth_token);
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!(%addr, "HTTP server listening");
 

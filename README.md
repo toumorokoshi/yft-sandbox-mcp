@@ -5,6 +5,7 @@ An extensible [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) s
 ## Features
 
 - **Dual Transport (HTTP & Stdio)**: Streamable HTTP transport hosted on Axum (Cloud Run ready on `$PORT`) with built-in health check probes (`/health`, `/livez`) and backward compatibility for stdio transport via `MCP_TRANSPORT=stdio`.
+- **Shared-Secret Auth**: MCP routes require the secret in `secrets/mcp-auth-token`, sent as `Authorization: Bearer <token>` or `?token=<token>` (see [Authentication](docs/authentication.md)).
 - **Clean Protocol Separation**: All diagnostic and runtime traces are routed to `stderr` via `tracing_subscriber`, keeping JSON-RPC protocol framing pristine.
 - **Modular Action Architecture**: Functional business logic is isolated into pure helper functions and tested independently from MCP serialization.
 - **Local CI & Zero Cost**: To avoid unnecessary GitHub Actions costs on private repositories, CI is validated locally before every push via Git pre-push hooks and `just ci`.
@@ -69,11 +70,16 @@ To connect to this server over HTTP (e.g. deployed on Cloud Run at `nachochips.t
 {
   "mcpServers": {
     "yft-sandbox": {
-      "url": "https://nachochips.tsutsumi.io/mcp"
+      "url": "https://nachochips.tsutsumi.io/mcp",
+      "headers": {
+        "Authorization": "Bearer <token from secrets/mcp-auth-token>"
+      }
     }
   }
 }
 ```
+
+Clients that cannot set headers can use `https://nachochips.tsutsumi.io/mcp?token=<token>` instead. See [Authentication](docs/authentication.md).
 
 ### Connecting via Stdio (Local Desktop)
 

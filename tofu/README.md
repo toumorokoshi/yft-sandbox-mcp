@@ -132,6 +132,7 @@ curl -s https://nachochips.tsutsumi.io/health
 
 # 2. Test MCP JSON-RPC protocol endpoint
 curl -s -X POST https://nachochips.tsutsumi.io/mcp \
+  -H "Authorization: Bearer $(cat secrets/mcp-auth-token)" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -H "MCP-Protocol-Version: 2024-11-05" \
@@ -148,11 +149,16 @@ To configure your AI client (e.g. Claude Desktop, Antigravity, Cursor) to use yo
 {
   "mcpServers": {
     "yft-sandbox": {
-      "url": "https://nachochips.tsutsumi.io/mcp"
+      "url": "https://nachochips.tsutsumi.io/mcp",
+      "headers": {
+        "Authorization": "Bearer <token from secrets/mcp-auth-token>"
+      }
     }
   }
 }
 ```
+
+Clients that cannot set headers can use `https://nachochips.tsutsumi.io/mcp?token=<token>` instead. See [Authentication](../docs/authentication.md).
 
 ---
 

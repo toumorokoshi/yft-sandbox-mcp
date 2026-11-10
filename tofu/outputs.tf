@@ -14,7 +14,7 @@ output "custom_domain_url" {
 }
 
 output "custom_domain_mcp_endpoint" {
-  description = "The full MCP client URL to configure in AI tools."
+  description = "The full MCP client URL to configure in AI tools. Requires the secret in secrets/mcp-auth-token (Bearer header or ?token=)."
   value       = "https://${var.domain_name}/mcp"
 }
 

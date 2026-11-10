@@ -62,3 +62,15 @@
 - **Decision**: Migrate IaC manifests exclusively to OpenTofu (`tofu/`), remove legacy `terraform/` directory/symlinks, update version constraint to `>= 1.6.0`, adopt `tofu.tfvars.example`, and update CLI workflows to `tofu`.
 - **Context**: Operator requested adapting the infrastructure files to OpenTofu and removing the legacy `terraform` directory.
 - **Rationale**: OpenTofu is a truly open-source (MPL-2.0, Linux Foundation) drop-in replacement with full compatibility with the Google provider (`hashicorp/google`) and provides a clean open-source foundation without BSL license restrictions.
+
+## 2026-11-09: Shared-Secret Authentication for the HTTP Transport
+
+### 1. Bearer Header with Query Parameter Fallback
+- **Decision**: Require a shared secret on all MCP routes, accepted as `Authorization: Bearer <token>` or `?token=<token>`. Health checks stay open.
+- **Context**: The Cloud Run service is public (`allUsers` invoker), so anyone could call MCP tools.
+- **Rationale**: The MCP authorization spec uses Bearer tokens on HTTP transports, so the header is the standard path. Some clients can only be configured with a URL, so the query parameter covers them. Full OAuth 2.1 is heavier than a single-user server needs today.
+
+### 2. Secret Loaded from a File in the Repository
+- **Decision**: Store the secret in `secrets/mcp-auth-token`, copy it into the image, and load it at startup from `MCP_AUTH_TOKEN_FILE`. Fail to start in HTTP mode if it is missing.
+- **Context**: Operator asked for the secret to live in the repository for now.
+- **Rationale**: Loading from a file path means moving to a Secret Manager volume mount later only changes deployment, not code. Failing closed avoids accidentally serving without auth.

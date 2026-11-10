@@ -13,6 +13,11 @@
 
 ## P2: Enhancements & Configurations
 
+- [ ] **Move MCP auth secret out of the repository**:
+  - `secrets/mcp-auth-token` is committed and baked into the container image. Move it to Google Secret Manager and mount it into Cloud Run as a file at `MCP_AUTH_TOKEN_FILE`.
+- [ ] **OAuth 2.1 authorization for MCP**:
+  - Replace the shared secret with the MCP authorization spec (OAuth 2.1 + protected resource metadata) if per-client identity or revocation is needed.
+
 - [ ] **Configuration File & Environment Overrides**:
   - Allow specifying default Anki deck, model name, and custom AnkiConnect URL via config file or environment variables (`ANKI_CONNECT_URL`).
 - [ ] **CLI Arguments**:

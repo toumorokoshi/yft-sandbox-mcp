@@ -43,6 +43,7 @@
 ## Module Structure
 
 - `src/lib.rs`: Library entrypoint, exposing `SandboxServer`, HTTP router utilities, and tools.
+- `src/auth.rs`: Shared-secret auth: loads the token file, extracts Bearer/query tokens, and provides the `require_auth_token` Axum middleware.
 - `src/http.rs`: HTTP router (`build_router`), health checks (`/health`, `/livez`), and server lifecycle (`run_http_server`) integrating `rmcp::transport::streamable_http_server` with Axum.
 - `src/main.rs`: Binary entrypoint. Supports HTTP server mode by default (listening on `$PORT` / `0.0.0.0`) and optional stdio mode when `MCP_TRANSPORT=stdio`.
 - `src/server.rs`: Server struct, tool registration macros, and MCP capabilities.

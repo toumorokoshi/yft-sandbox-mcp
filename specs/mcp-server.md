@@ -11,12 +11,20 @@
 ## HTTP Endpoints & Configuration
 
 - `GET /health` & `GET /livez`: Health check endpoints returning HTTP 200 OK for Cloud Run liveness and startup probes.
-- `POST /mcp` (and `GET /mcp` for SSE): MCP JSON-RPC protocol endpoint handling session initialization, notifications, and tool invocations.
+- `POST /mcp` (and `GET /mcp` for SSE): MCP JSON-RPC protocol endpoint handling session initialization, notifications, and tool invocations. Requires authentication (see below).
 - **Environment Variables**:
   - `PORT`: HTTP port to bind to (defaults to `8080` for Cloud Run compatibility).
   - `HOST`: Bind address (defaults to `0.0.0.0`).
   - `ALLOWED_HOSTS`: Comma-separated list of permitted host headers (defaults to `nachochips.tsutsumi.io,localhost,127.0.0.1,0.0.0.0`; set to `*` to disable host validation).
   - `MCP_TRANSPORT`: Set to `stdio` for local client stdio mode; defaults to `http`.
+  - `MCP_AUTH_TOKEN_FILE`: Path to the shared-secret file (defaults to `secrets/mcp-auth-token`).
+
+## Authentication
+
+- Every MCP route (`/mcp` and the `/` fallback) requires a shared secret; `/health` and `/livez` do not.
+- The secret is accepted as `Authorization: Bearer <token>` (preferred) or the `token` query parameter. A present Bearer header takes precedence.
+- Tokens are compared in constant time. Failures return `401` with `WWW-Authenticate: Bearer`.
+- The secret is loaded once at startup from `MCP_AUTH_TOKEN_FILE`; HTTP mode fails to start if the file is missing or empty. Stdio mode ignores it.
 
 ## I/O & Logging Rules
 

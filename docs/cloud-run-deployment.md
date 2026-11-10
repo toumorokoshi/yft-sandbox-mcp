@@ -177,6 +177,7 @@ Send an MCP `initialize` request to the `/mcp` endpoint:
 
 ```bash
 curl -i -X POST https://nachochips.tsutsumi.io/mcp \
+  -H "Authorization: Bearer $(cat secrets/mcp-auth-token)" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -H "MCP-Protocol-Version: 2024-11-05" \
@@ -210,11 +211,16 @@ To connect MCP-compatible AI clients (such as Claude Desktop, Antigravity, or Cu
 {
   "mcpServers": {
     "yft-sandbox": {
-      "url": "https://nachochips.tsutsumi.io/mcp"
+      "url": "https://nachochips.tsutsumi.io/mcp",
+      "headers": {
+        "Authorization": "Bearer <token from secrets/mcp-auth-token>"
+      }
     }
   }
 }
 ```
+
+Clients that cannot set headers can use `https://nachochips.tsutsumi.io/mcp?token=<token>` instead. See [Authentication](authentication.md).
 
 ---
 

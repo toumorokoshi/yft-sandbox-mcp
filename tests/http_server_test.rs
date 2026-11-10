@@ -3,7 +3,9 @@ use std::net::SocketAddr;
 use reqwest::Client;
 use serde_json::json;
 use tokio_util::sync::CancellationToken;
-use yft_sandbox_mcp::{build_router, default_server_config};
+use yft_sandbox_mcp::{build_router, default_server_config, load_auth_token, parse_auth_token};
+
+const TEST_TOKEN: &str = "test-secret-token";
 
 async fn spawn_test_server() -> (Client, String, CancellationToken) {
     let cancellation_token = CancellationToken::new();
@@ -13,7 +15,8 @@ async fn spawn_test_server() -> (Client, String, CancellationToken) {
         "testserver",
     ]);
 
-    let app = build_router(config);
+    let auth_token = parse_auth_token(TEST_TOKEN).expect("valid test token");
+    let app = build_router(config, auth_token);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("failed to bind listener");
@@ -95,6 +98,7 @@ async fn test_mcp_http_initialization_and_tool_call() {
         .header("Content-Type", "application/json")
         .header("Accept", "application/json, text/event-stream")
         .header("MCP-Protocol-Version", "2024-11-05")
+        .bearer_auth(TEST_TOKEN)
         .json(&init_payload)
         .send()
         .await
@@ -117,7 +121,8 @@ async fn test_mcp_http_initialization_and_tool_call() {
         .post(format!("{base_url}/mcp"))
         .header("Content-Type", "application/json")
         .header("Accept", "application/json, text/event-stream")
-        .header("MCP-Protocol-Version", "2024-11-05");
+        .header("MCP-Protocol-Version", "2024-11-05")
+        .bearer_auth(TEST_TOKEN);
     if let Some(ref sid) = session_id {
         notif_builder = notif_builder.header("Mcp-Session-Id", sid);
     }
@@ -148,7 +153,8 @@ async fn test_mcp_http_initialization_and_tool_call() {
         .post(format!("{base_url}/mcp"))
         .header("Content-Type", "application/json")
         .header("Accept", "application/json, text/event-stream")
-        .header("MCP-Protocol-Version", "2024-11-05");
+        .header("MCP-Protocol-Version", "2024-11-05")
+        .bearer_auth(TEST_TOKEN);
 
     if let Some(ref sid) = session_id {
         req_builder = req_builder.header("Mcp-Session-Id", sid);
@@ -178,6 +184,7 @@ async fn test_disallowed_host_is_rejected() {
     let res = client
         .post(format!("{base_url}/mcp"))
         .header("Host", "malicious-site.com")
+        .bearer_auth(TEST_TOKEN)
         .header("Content-Type", "application/json")
         .header("Accept", "application/json")
         .json(&json!({"jsonrpc": "2.0", "id": 1, "method": "initialize"}))
@@ -188,4 +195,73 @@ async fn test_disallowed_host_is_rejected() {
     assert_eq!(res.status(), 403);
 
     ct.cancel();
+}
+
+fn initialize_payload() -> serde_json::Value {
+    json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {"name": "auth-test-client", "version": "1.0.0"}
+        }
+    })
+}
+
+async fn post_initialize(client: &Client, url: &str, bearer: Option<&str>) -> reqwest::Response {
+    let mut builder = client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json, text/event-stream")
+        .header("MCP-Protocol-Version", "2024-11-05");
+    if let Some(token) = bearer {
+        builder = builder.bearer_auth(token);
+    }
+    builder
+        .json(&initialize_payload())
+        .send()
+        .await
+        .expect("request should complete")
+}
+
+#[tokio::test]
+async fn test_missing_or_wrong_token_is_rejected() {
+    let (client, base_url, ct) = spawn_test_server().await;
+
+    for url in [format!("{base_url}/mcp"), format!("{base_url}/")] {
+        let res = post_initialize(&client, &url, None).await;
+        assert_eq!(res.status(), 401);
+        assert_eq!(res.headers()["www-authenticate"], "Bearer");
+    }
+
+    let res = post_initialize(&client, &format!("{base_url}/mcp"), Some("wrong")).await;
+    assert_eq!(res.status(), 401);
+
+    let res = post_initialize(&client, &format!("{base_url}/mcp?token=wrong"), None).await;
+    assert_eq!(res.status(), 401);
+
+    ct.cancel();
+}
+
+#[tokio::test]
+async fn test_query_param_token_is_accepted() {
+    let (client, base_url, ct) = spawn_test_server().await;
+
+    let url = format!("{base_url}/mcp?token={TEST_TOKEN}");
+    let res = post_initialize(&client, &url, None).await;
+    assert_eq!(res.status(), 200);
+
+    ct.cancel();
+}
+
+#[test]
+fn test_load_auth_token_from_file() {
+    let path = std::env::temp_dir().join(format!("yft-sandbox-mcp-token-{}", std::process::id()));
+    std::fs::write(&path, format!("{TEST_TOKEN}\n")).expect("write token file");
+    let loaded = load_auth_token(&path);
+    std::fs::remove_file(&path).expect("remove token file");
+    assert!(loaded.is_ok());
+    assert!(load_auth_token(&path).is_err());
 }

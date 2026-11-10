@@ -1,8 +1,12 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, path::Path};
 
 use rmcp::ServiceExt;
 use tokio_util::sync::CancellationToken;
-use yft_sandbox_mcp::{SandboxServer, default_server_config, run_http_server};
+use yft_sandbox_mcp::{
+    SandboxServer,
+    auth::{AUTH_TOKEN_FILE_ENV, auth_token_path, load_auth_token},
+    default_server_config, run_http_server,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -28,6 +32,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             .await?;
         return Ok(());
     }
+
+    let token_path = auth_token_path(std::env::var(AUTH_TOKEN_FILE_ENV).ok());
+    let auth_token = load_auth_token(Path::new(&token_path))
+        .map_err(|err| format!("{err} (path: {token_path}, set {AUTH_TOKEN_FILE_ENV})"))?;
+    tracing::info!(path = %token_path, "Loaded MCP auth token");
 
     let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
@@ -64,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let config = default_server_config(cancellation_token.clone());
     tracing::info!(%addr, "Starting yft-sandbox-mcp server on HTTP transport (Cloud Run ready)");
 
-    run_http_server(addr, config, cancellation_token).await?;
+    run_http_server(addr, config, auth_token, cancellation_token).await?;
 
     Ok(())
 }
