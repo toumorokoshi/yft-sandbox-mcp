@@ -113,3 +113,8 @@
 - **Decision**: In `mcp_compat_middleware`, if incoming POST `Accept` header lacks either `application/json` or `text/event-stream`, normalize it to include both.
 - **Context**: `rmcp` in Streamable HTTP mode strictly requires clients to accept both MIME types. Clients sending only `Accept: application/json` or `*/*` received 406.
 - **Rationale**: Normalization allows clients to negotiate JSON-RPC payloads transparently without being rejected.
+
+### 4. Enable Stateless JSON Responses by Disabling Legacy Session Mode
+- **Decision**: Configure `StreamableHttpServerConfig` with `with_legacy_session_mode(false)` alongside `with_json_response(true)`.
+- **Context**: `rmcp` defaults `legacy_session_mode` to `true`, which overrides `json_response(true)` and causes all POST responses to be framed as Server-Sent Events (`text/event-stream` with `data: ...`). Standard MCP HTTP clients (such as Gemini Developer Mode) expect `Content-Type: application/json` and fail to parse SSE-framed responses.
+- **Rationale**: Disabling legacy session mode allows `json_response(true)` to take effect, returning clean `application/json` JSON-RPC responses for initialize and tool calls.

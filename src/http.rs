@@ -143,6 +143,7 @@ pub fn parse_allowed_hosts(hosts_str: &str) -> Option<Vec<String>> {
 pub fn default_server_config(cancellation_token: CancellationToken) -> StreamableHttpServerConfig {
     let mut config = StreamableHttpServerConfig::default()
         .with_cancellation_token(cancellation_token)
+        .with_legacy_session_mode(false)
         .with_json_response(true);
 
     let allowed_hosts_env = std::env::var("ALLOWED_HOSTS").unwrap_or_else(|_| {
