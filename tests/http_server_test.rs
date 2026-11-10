@@ -256,6 +256,63 @@ async fn test_query_param_token_is_accepted() {
     ct.cancel();
 }
 
+#[tokio::test]
+async fn test_head_and_probe_endpoints() {
+    let (client, base_url, ct) = spawn_test_server().await;
+
+    // HEAD /mcp (without auth) succeeds with 200 OK
+    let res_head_anon = client
+        .head(format!("{base_url}/mcp"))
+        .send()
+        .await
+        .expect("head anon failed");
+    assert_eq!(res_head_anon.status(), 200);
+
+    // HEAD /mcp?token=... succeeds with 200 OK
+    let res_head_auth = client
+        .head(format!("{base_url}/mcp?token={TEST_TOKEN}"))
+        .send()
+        .await
+        .expect("head auth failed");
+    assert_eq!(res_head_auth.status(), 200);
+
+    // GET /mcp?token=... without Accept: text/event-stream returns 200 with server info
+    let res_get_probe = client
+        .get(format!("{base_url}/mcp?token={TEST_TOKEN}"))
+        .send()
+        .await
+        .expect("get probe failed");
+    assert_eq!(res_get_probe.status(), 200);
+    assert_eq!(res_get_probe.headers()["content-type"], "application/json");
+    let body: serde_json::Value = res_get_probe.json().await.expect("json body");
+    assert_eq!(body["status"], "ok");
+    assert_eq!(body["server"], "yft-sandbox-mcp");
+
+    // GET /.well-known/oauth-protected-resource returns 404 without auth challenge
+    let res_well_known = client
+        .get(format!("{base_url}/.well-known/oauth-protected-resource"))
+        .send()
+        .await
+        .expect("well-known request failed");
+    assert_eq!(res_well_known.status(), 404);
+    assert!(!res_well_known.headers().contains_key("www-authenticate"));
+
+    // POST /mcp with ONLY Accept: application/json succeeds (accept header normalization)
+    let res_post_json = client
+        .post(format!("{base_url}/mcp"))
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .header("MCP-Protocol-Version", "2024-11-05")
+        .bearer_auth(TEST_TOKEN)
+        .json(&initialize_payload())
+        .send()
+        .await
+        .expect("post with json accept failed");
+    assert_eq!(res_post_json.status(), 200);
+
+    ct.cancel();
+}
+
 #[test]
 fn test_load_auth_token_from_file() {
     let path = std::env::temp_dir().join(format!("yft-sandbox-mcp-token-{}", std::process::id()));

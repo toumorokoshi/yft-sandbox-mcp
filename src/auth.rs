@@ -9,7 +9,7 @@ use std::{path::Path, sync::Arc};
 
 use axum::{
     extract::{Request, State},
-    http::{HeaderMap, StatusCode, header},
+    http::{HeaderMap, Method, StatusCode, header},
     middleware::Next,
     response::{IntoResponse, Response},
 };
@@ -130,6 +130,9 @@ pub async fn require_auth_token(
     request: Request,
     next: Next,
 ) -> Response {
+    if request.method() == Method::HEAD {
+        return (StatusCode::OK, [(header::CONTENT_TYPE, "application/json")]).into_response();
+    }
     if is_authorized(&expected, request.headers(), request.uri().query()) {
         return next.run(request).await;
     }

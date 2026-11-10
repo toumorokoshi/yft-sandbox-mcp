@@ -2,7 +2,13 @@
 
 use std::{net::SocketAddr, sync::Arc};
 
-use axum::{Router, middleware, response::IntoResponse, routing::get};
+use axum::{
+    Router,
+    http::{HeaderValue, Method, StatusCode, header},
+    middleware,
+    response::IntoResponse,
+    routing::{any, get},
+};
 use rmcp::transport::streamable_http_server::{
     StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
 };
@@ -13,9 +19,108 @@ use crate::{
     server::SandboxServer,
 };
 
+/// JSON MIME type constant.
+pub const JSON_MIME_TYPE: &str = "application/json";
+
+/// Server-Sent Events MIME type constant.
+pub const EVENT_STREAM_MIME_TYPE: &str = "text/event-stream";
+
+/// Header value required by rmcp StreamableHttpServer for POST requests.
+pub const MCP_ACCEPT_REQUIRED: &str = "application/json, text/event-stream";
+
+/// Response body for HTTP probe / info GET requests on MCP routes.
+pub const SERVER_INFO_BODY: &str =
+    r#"{"status":"ok","server":"yft-sandbox-mcp","protocol":"mcp","transport":"streamable-http"}"#;
+
+/// Response body for unconfigured OAuth discovery.
+pub const NOT_FOUND_BODY: &str = r#"{"error":"not_found"}"#;
+
 /// Health check handler for Cloud Run liveness and startup probes.
 pub async fn health_check() -> impl IntoResponse {
     "OK"
+}
+
+/// Handler for `/.well-known/*` paths returning 404 without authentication challenge.
+pub async fn well_known_not_found() -> impl IntoResponse {
+    (
+        StatusCode::NOT_FOUND,
+        [(header::CONTENT_TYPE, JSON_MIME_TYPE)],
+        NOT_FOUND_BODY,
+    )
+}
+
+/// Check if the request Accept header includes `text/event-stream` for SSE streaming.
+#[must_use]
+pub fn accepts_event_stream(accept_header: Option<&str>) -> bool {
+    accept_header.is_some_and(|h| {
+        h.split(',').any(|part| {
+            part.trim()
+                .split(';')
+                .next()
+                .is_some_and(|essence| essence.trim().eq_ignore_ascii_case(EVENT_STREAM_MIME_TYPE))
+        })
+    })
+}
+
+/// Determine whether an Accept header should be normalized for rmcp POST compatibility.
+#[must_use]
+pub fn needs_accept_normalization(accept_header: Option<&str>) -> bool {
+    let Some(h) = accept_header else {
+        return true;
+    };
+    let mut has_json = false;
+    let mut has_sse = false;
+    for part in h.split(',') {
+        if let Some(essence) = part.trim().split(';').next() {
+            let essence = essence.trim();
+            if essence.eq_ignore_ascii_case(JSON_MIME_TYPE) {
+                has_json = true;
+            } else if essence.eq_ignore_ascii_case(EVENT_STREAM_MIME_TYPE) {
+                has_sse = true;
+            }
+        }
+    }
+    !has_json || !has_sse
+}
+
+/// Axum middleware providing HTTP compatibility for MCP probes and client variations.
+pub async fn mcp_compat_middleware(
+    mut request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    if request.method() == Method::HEAD {
+        return (StatusCode::OK, [(header::CONTENT_TYPE, JSON_MIME_TYPE)]).into_response();
+    }
+
+    if request.method() == Method::GET {
+        let accept_header = request
+            .headers()
+            .get(header::ACCEPT)
+            .and_then(|v| v.to_str().ok());
+        if !accepts_event_stream(accept_header) {
+            return (
+                StatusCode::OK,
+                [(header::CONTENT_TYPE, JSON_MIME_TYPE)],
+                SERVER_INFO_BODY,
+            )
+                .into_response();
+        }
+    }
+
+    if request.method() == Method::POST {
+        let accept_header = request
+            .headers()
+            .get(header::ACCEPT)
+            .and_then(|v| v.to_str().ok());
+        if needs_accept_normalization(accept_header) {
+            request.headers_mut().insert(
+                header::ACCEPT,
+                HeaderValue::from_static(MCP_ACCEPT_REQUIRED),
+            );
+        }
+    }
+
+    next.run(request).await
 }
 
 /// Parse a comma-separated list of allowed hostnames or disable if wildcard.
@@ -56,8 +161,8 @@ pub fn default_server_config(cancellation_token: CancellationToken) -> Streamabl
 
 /// Build the Axum router with health checks and MCP streamable HTTP service.
 ///
-/// Health checks are unauthenticated so Cloud Run probes succeed; every MCP
-/// route requires `auth_token`.
+/// Health checks and OAuth discovery are unauthenticated; every MCP route
+/// requires `auth_token` and HTTP compatibility layers.
 pub fn build_router(config: StreamableHttpServerConfig, auth_token: AuthToken) -> Router {
     let session_manager = Arc::new(LocalSessionManager::default());
     let service: StreamableHttpService<SandboxServer, LocalSessionManager> =
@@ -66,6 +171,7 @@ pub fn build_router(config: StreamableHttpServerConfig, auth_token: AuthToken) -
     let mcp_routes = Router::new()
         .nest_service("/mcp", service.clone())
         .fallback_service(service)
+        .layer(middleware::from_fn(mcp_compat_middleware))
         .layer(middleware::from_fn_with_state(
             auth_token,
             require_auth_token,
@@ -74,6 +180,8 @@ pub fn build_router(config: StreamableHttpServerConfig, auth_token: AuthToken) -
     Router::new()
         .route("/health", get(health_check))
         .route("/livez", get(health_check))
+        .route("/.well-known", any(well_known_not_found))
+        .route("/.well-known/{*path}", any(well_known_not_found))
         .merge(mcp_routes)
 }
 
@@ -119,5 +227,39 @@ mod tests {
     async fn test_health_check_endpoint() {
         let response = health_check().await.into_response();
         assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_well_known_not_found_endpoint() {
+        let response = well_known_not_found().await.into_response();
+        assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn test_accepts_event_stream() {
+        assert!(accepts_event_stream(Some("text/event-stream")));
+        assert!(accepts_event_stream(Some(
+            "text/event-stream; charset=utf-8"
+        )));
+        assert!(accepts_event_stream(Some(
+            "application/json, text/event-stream"
+        )));
+        assert!(!accepts_event_stream(Some("application/json")));
+        assert!(!accepts_event_stream(Some("*/*")));
+        assert!(!accepts_event_stream(None));
+    }
+
+    #[test]
+    fn test_needs_accept_normalization() {
+        assert!(needs_accept_normalization(None));
+        assert!(needs_accept_normalization(Some("*/*")));
+        assert!(needs_accept_normalization(Some("application/json")));
+        assert!(needs_accept_normalization(Some("text/event-stream")));
+        assert!(!needs_accept_normalization(Some(
+            "application/json, text/event-stream"
+        )));
+        assert!(!needs_accept_normalization(Some(
+            "text/event-stream, application/json"
+        )));
     }
 }

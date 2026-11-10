@@ -1,7 +1,11 @@
 # Authentication
 
-The HTTP transport requires a shared secret on every MCP request. Health
-checks (`/health`, `/livez`) stay unauthenticated so Cloud Run probes work.
+The HTTP transport requires a shared secret on every MCP JSON-RPC and SSE
+request. Health checks (`/health`, `/livez`) and reachability checks (`HEAD`)
+stay unauthenticated so Cloud Run probes and HTTP preflight checks succeed.
+Unconfigured OAuth discovery routes (`/.well-known/*`) return `404 Not Found`
+without an authentication challenge per RFC 9728. Plain `GET /mcp` requests
+without `Accept: text/event-stream` return `200 OK` server metadata.
 
 ## Presenting the secret
 

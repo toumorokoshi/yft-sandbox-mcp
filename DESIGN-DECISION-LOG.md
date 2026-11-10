@@ -96,3 +96,20 @@
 - **Decision**: Add the deterministic `<service>-<project-number>.<region>.run.app` host to `ALLOWED_HOSTS` automatically, and accept extra exact hosts through `extra_allowed_hosts` (used for the legacy `*.a.run.app` URL).
 - **Context**: Operator wants to use the run.app URL while the custom domain is unverified; MCP requests to it returned 403.
 - **Rationale**: rmcp matches `Host` exactly, so a bare `run.app` suffix would never match. The deterministic host is computable from the project number without a dependency cycle; the legacy host is only known after creation, so it is a variable.
+
+## 2026-11-09: HTTP Compatibility for URL Probes and Client Handshakes
+
+### 1. Reachability Checks for HEAD and Plain GET
+- **Decision**: Respond to `HEAD` requests on any route with `200 OK` unauthenticated. For authenticated `GET /mcp` without `Accept: text/event-stream`, return `200 OK` with JSON server metadata.
+- **Context**: AI client URL validators (e.g., Google/Gemini) probe endpoints using `HEAD` or plain `GET`. `rmcp` previously returned `405 Method Not Allowed` for `HEAD` and `406 Not Acceptable` for `GET` without SSE.
+- **Rationale**: Standard HTTP reachability checks expect 200 OK to confirm endpoint availability. Non-SSE `GET` responses inform clients that the server is an active MCP endpoint.
+
+### 2. OAuth Discovery Route Handling
+- **Decision**: Explicitly route `/.well-known/*` to return `404 Not Found` without an auth challenge.
+- **Context**: URL validators probe `/.well-known/oauth-protected-resource`. Auth middleware previously returned `401 Unauthorized` with `WWW-Authenticate: Bearer`, causing clients to assume broken OAuth metadata.
+- **Rationale**: RFC 9728 requires unconfigured OAuth metadata endpoints to return 404 rather than 401.
+
+### 3. Accept Header Normalization for POST Requests
+- **Decision**: In `mcp_compat_middleware`, if incoming POST `Accept` header lacks either `application/json` or `text/event-stream`, normalize it to include both.
+- **Context**: `rmcp` in Streamable HTTP mode strictly requires clients to accept both MIME types. Clients sending only `Accept: application/json` or `*/*` received 406.
+- **Rationale**: Normalization allows clients to negotiate JSON-RPC payloads transparently without being rejected.
