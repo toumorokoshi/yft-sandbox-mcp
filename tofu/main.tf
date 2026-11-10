@@ -60,11 +60,7 @@ resource "google_cloud_run_v2_service" "mcp_service" {
         }
       }
 
-      env {
-        name  = "PORT"
-        value = "8080"
-      }
-
+      # PORT is reserved: Cloud Run injects it from container_port above.
       env {
         name  = "HOST"
         value = "0.0.0.0"

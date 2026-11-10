@@ -13,6 +13,13 @@
 
 ## P2: Enhancements & Configurations
 
+- [ ] **Verify `tsutsumi.io` for the custom domain mapping**:
+  - `google_cloud_run_domain_mapping.domain` fails with "Caller is not authorized to administer the domain". Verify `tsutsumi.io` in Google Search Console as the deploying account, then re-run `tofu apply`.
+- [ ] **Allow the `*.run.app` host or document it as unsupported**:
+  - MCP requests to the default Cloud Run URL return 403 because the host is not in `ALLOWED_HOSTS`. Only the custom domain works today.
+- [ ] **Remote OpenTofu state**:
+  - State lives in a local `tofu/terraform.tfstate`. Move it to a GCS backend so it is not lost with the workstation.
+
 - [ ] **Move MCP auth secret out of the repository**:
   - `secrets/mcp-auth-token` is committed and baked into the container image. Move it to Google Secret Manager and mount it into Cloud Run as a file at `MCP_AUTH_TOKEN_FILE`.
 - [ ] **OAuth 2.1 authorization for MCP**:

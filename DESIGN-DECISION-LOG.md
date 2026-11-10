@@ -74,3 +74,20 @@
 - **Decision**: Store the secret in `secrets/mcp-auth-token`, copy it into the image, and load it at startup from `MCP_AUTH_TOKEN_FILE`. Fail to start in HTTP mode if it is missing.
 - **Context**: Operator asked for the secret to live in the repository for now.
 - **Rationale**: Loading from a file path means moving to a Secret Manager volume mount later only changes deployment, not code. Failing closed avoids accidentally serving without auth.
+
+## 2026-11-09: First Cloud Run Deploy Fixes
+
+### 1. Use `terraform.tfvars` Instead of `tofu.tfvars`
+- **Decision**: Rename `tofu.tfvars(.example)` to `terraform.tfvars(.example)` and gitignore local state and variable files.
+- **Context**: `tofu apply` prompted for `project_id` because OpenTofu only auto-loads `terraform.tfvars` and `*.auto.tfvars`.
+- **Rationale**: The standard name makes plain `tofu apply` work without `-var-file`.
+
+### 2. Push the Image Before Creating the Service
+- **Decision**: Document a targeted apply of the Artifact Registry repo, then image push, then a full apply for first-time deploys.
+- **Context**: Cloud Run rejects a service whose image does not exist.
+- **Rationale**: Keeps the registry managed by OpenTofu without a separate bootstrap module.
+
+### 3. Drop the `PORT` Env Var from the Cloud Run Service
+- **Decision**: Remove `PORT` from the container `env` block.
+- **Context**: Cloud Run reserves `PORT` and rejected the service with a 400.
+- **Rationale**: Cloud Run sets `PORT` from `container_port`, so the server still binds 8080.

@@ -2,3 +2,10 @@
 .DS_Store
 *.swp
 *~
+
+# OpenTofu local state and variables
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example

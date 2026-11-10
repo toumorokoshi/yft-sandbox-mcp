@@ -56,13 +56,13 @@ gcloud config set project YOUR_PROJECT_ID
 
 ### 2. Configure OpenTofu Variables
 
-Create a `tofu.tfvars` file from the provided example:
+Create a `terraform.tfvars` file from the provided example:
 
 ```bash
-cp tofu.tfvars.example tofu.tfvars
+cp terraform.tfvars.example terraform.tfvars
 ```
 
-Edit `tofu.tfvars` and set your GCP Project ID:
+Edit `terraform.tfvars` and set your GCP Project ID:
 
 ```hcl
 project_id  = "YOUR_PROJECT_ID"
@@ -76,6 +76,17 @@ domain_name = "nachochips.tsutsumi.io"
 tofu init
 tofu apply
 ```
+
+> [!IMPORTANT]
+> Cloud Run refuses to create a service whose image does not exist yet. On the
+> **first** deploy, create the registry, push the image (Step 4), then apply
+> everything:
+>
+> ```bash
+> tofu apply -target=google_artifact_registry_repository.docker_repo
+> # ... build and push the image (Step 4) ...
+> tofu apply
+> ```
 
 Review the plan and type `yes` to confirm. OpenTofu will:
 - Enable the Cloud Run and Artifact Registry APIs.

@@ -81,10 +81,10 @@ Navigate into the `tofu/` directory:
 
 ```bash
 cd tofu
-cp tofu.tfvars.example tofu.tfvars
+cp terraform.tfvars.example terraform.tfvars
 ```
 
-Edit `tofu.tfvars` and set your GCP Project ID:
+Edit `terraform.tfvars` and set your GCP Project ID:
 
 ```hcl
 project_id  = "YOUR_PROJECT_ID"
@@ -103,6 +103,17 @@ Initialize the OpenTofu Google provider and provision the infrastructure:
 tofu init
 tofu apply
 ```
+
+> [!IMPORTANT]
+> Cloud Run refuses to create a service whose image does not exist yet. On the
+> **first** deploy, create the registry, push the image (Step 5), then apply
+> everything:
+>
+> ```bash
+> tofu apply -target=google_artifact_registry_repository.docker_repo
+> # ... build and push the image (Step 5) ...
+> tofu apply
+> ```
 
 Type `yes` when prompted. OpenTofu will:
 - Enable the Cloud Run API (`run.googleapis.com`) and Artifact Registry API (`artifactregistry.googleapis.com`).
