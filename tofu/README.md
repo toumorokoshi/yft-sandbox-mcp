@@ -152,6 +152,12 @@ curl -s -X POST https://nachochips.tsutsumi.io/mcp \
 
 ---
 
+> [!NOTE]
+> The MCP server only accepts requests whose `Host` is in `ALLOWED_HOSTS`.
+> OpenTofu adds the custom domain and the deterministic
+> `<service>-<project-number>.<region>.run.app` URL. To use the legacy
+> `*.a.run.app` URL too, set `extra_allowed_hosts` in `terraform.tfvars`.
+
 ## Client Configuration
 
 To configure your AI client (e.g. Claude Desktop, Antigravity, Cursor) to use your deployed Cloud Run server, add the following to your MCP client config:

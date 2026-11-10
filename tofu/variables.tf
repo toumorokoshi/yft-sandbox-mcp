@@ -56,3 +56,9 @@ variable "memory_limit" {
   default     = "512Mi"
   description = "Memory limit for the Cloud Run instance (e.g., '256Mi', '512Mi', '1Gi')."
 }
+
+variable "extra_allowed_hosts" {
+  type        = list(string)
+  default     = []
+  description = "Additional exact Host header values the MCP server accepts (e.g. the legacy <service>-<hash>-<region>.a.run.app URL, which is only known after the service is created)."
+}

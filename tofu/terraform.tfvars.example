@@ -28,3 +28,6 @@ max_instance_count = 10
 # Compute allocations
 cpu_limit    = "1"
 memory_limit = "512Mi"
+
+# Extra exact hosts the MCP server accepts (e.g. the legacy *.a.run.app URL)
+# extra_allowed_hosts = ["yft-sandbox-mcp-<hash>-uc.a.run.app"]

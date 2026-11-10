@@ -28,8 +28,22 @@ resource "google_artifact_registry_repository" "docker_repo" {
   depends_on = [google_project_service.artifactregistry]
 }
 
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
 locals {
   container_image = var.container_image != "" ? var.container_image : "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.docker_repo.repository_id}/server:latest"
+
+  # Deterministic Cloud Run URL host. rmcp matches hosts exactly, so a bare
+  # "run.app" suffix would not match; the full hostname is required.
+  run_app_host = "${var.service_name}-${data.google_project.current.number}.${var.region}.run.app"
+
+  allowed_hosts = concat(
+    [var.domain_name, local.run_app_host],
+    var.extra_allowed_hosts,
+    ["localhost", "127.0.0.1", "0.0.0.0"],
+  )
 }
 
 # ------------------------------------------------------------------------------
@@ -68,7 +82,7 @@ resource "google_cloud_run_v2_service" "mcp_service" {
 
       env {
         name  = "ALLOWED_HOSTS"
-        value = "${var.domain_name},localhost,127.0.0.1,0.0.0.0"
+        value = join(",", local.allowed_hosts)
       }
 
       env {

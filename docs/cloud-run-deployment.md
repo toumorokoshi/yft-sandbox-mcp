@@ -125,6 +125,12 @@ Type `yes` when prompted. OpenTofu will:
 
 ---
 
+> [!NOTE]
+> The MCP server only accepts requests whose `Host` is in `ALLOWED_HOSTS`.
+> OpenTofu adds the custom domain and the deterministic
+> `<service>-<project-number>.<region>.run.app` URL. To use the legacy
+> `*.a.run.app` URL too, set `extra_allowed_hosts` in `terraform.tfvars`.
+
 ### Step 4: Configure External DNS
 
 Log in to your external DNS provider (e.g., Cloudflare, AWS Route 53, Namecheap, Squarespace, Porkbun) and create the following record:

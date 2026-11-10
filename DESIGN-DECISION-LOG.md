@@ -91,3 +91,8 @@
 - **Decision**: Remove `PORT` from the container `env` block.
 - **Context**: Cloud Run reserves `PORT` and rejected the service with a 400.
 - **Rationale**: Cloud Run sets `PORT` from `container_port`, so the server still binds 8080.
+
+### 4. Allow the Cloud Run `run.app` Hosts
+- **Decision**: Add the deterministic `<service>-<project-number>.<region>.run.app` host to `ALLOWED_HOSTS` automatically, and accept extra exact hosts through `extra_allowed_hosts` (used for the legacy `*.a.run.app` URL).
+- **Context**: Operator wants to use the run.app URL while the custom domain is unverified; MCP requests to it returned 403.
+- **Rationale**: rmcp matches `Host` exactly, so a bare `run.app` suffix would never match. The deterministic host is computable from the project number without a dependency cycle; the legacy host is only known after creation, so it is a variable.
