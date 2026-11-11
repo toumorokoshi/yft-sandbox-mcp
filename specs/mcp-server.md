@@ -38,3 +38,8 @@
 2. Input argument structs must derive `Deserialize`, `Serialize`, and `schemars::JsonSchema`.
 3. Business logic must be implemented in pure, standalone helper functions separated from MCP parameter unwrapping.
 4. Each tool module must include automated unit tests for its core transformation logic.
+
+## Registered MCP Tools
+
+- `echo`: Echoes back the input message for testing connectivity.
+- `bundle-anki-flashcard`: Accepts `deck_name` (optional, defaults to `"Default"`), `question`, and `answer`, and returns a valid Anki `.apkg` file as an embedded resource blob.

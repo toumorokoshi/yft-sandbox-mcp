@@ -15,7 +15,7 @@ An extensible [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) s
 | Tool | Description | Status |
 |------|-------------|--------|
 | `echo` | Example MCP action that echoes back an input message. | Ready |
-| `anki_create_flashcard` | Create flashcards in Anki via AnkiConnect. | Planned (see `GAPS.md` and `design/anki-flashcard-tool.md`) |
+| `bundle-anki-flashcard` | Bundle flashcard into a downloadable `.apkg` file with target deck name, question, and answer. | Ready |
 
 ## Quickstart
 

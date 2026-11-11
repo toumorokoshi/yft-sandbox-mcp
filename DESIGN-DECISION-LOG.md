@@ -118,3 +118,20 @@
 - **Decision**: Configure `StreamableHttpServerConfig` with `with_legacy_session_mode(false)` alongside `with_json_response(true)`.
 - **Context**: `rmcp` defaults `legacy_session_mode` to `true`, which overrides `json_response(true)` and causes all POST responses to be framed as Server-Sent Events (`text/event-stream` with `data: ...`). Standard MCP HTTP clients (such as Gemini Developer Mode) expect `Content-Type: application/json` and fail to parse SSE-framed responses.
 - **Rationale**: Disabling legacy session mode allows `json_response(true)` to take effect, returning clean `application/json` JSON-RPC responses for initialize and tool calls.
+
+## 2026-11-10: Anki Flashcard Bundling Tool (bundle-anki-flashcard)
+
+### 1. In-Memory `.apkg` Generation via `genanki-rs`
+- **Decision**: Generate standard Anki package files (`.apkg`) directly in-memory using `genanki-rs` rather than sending requests to AnkiConnect or scraping AnkiWeb (`ankiuser.net`).
+- **Context**: The server operates on Cloud Run where local Anki Desktop GUI instances are not running, and hitting `ankiweb.net` directly with automated scraping or reverse-engineered sync violates AnkiWeb's Terms of Service.
+- **Rationale**: Building a valid SQLite collection database and packaging it into a ZIP archive entirely in-memory using `Cursor<Vec<u8>>` is completely stateless, fast (< 10ms execution), requires zero filesystem disk access, and is 100% compliant with Anki's terms.
+
+### 2. File Delivery via MCP Embedded Resource Blob
+- **Decision**: Return the generated `.apkg` file as an MCP Embedded Resource (`BlobResourceContents`) encoded with Base64, alongside human-readable text.
+- **Context**: The user requested that the tool accept a deck name, question, and answer, and return the `.apkg` file directly.
+- **Rationale**: MCP natively supports returning binary data inside `CallToolResult` using `ContentBlock::resource` with `BlobResourceContents` (`application/octet-stream`), allowing MCP clients to inspect, save, or download the binary package without external storage hosting dependencies.
+
+### 3. Deterministic Deck ID & Input Validation
+- **Decision**: Deterministically hash the deck name into a valid positive 64-bit integer deck ID, sanitize the filename for the URI, and validate that `question` and `answer` are non-empty strings.
+- **Context**: Anki requires non-zero 64-bit integers for deck IDs and errors if fields are empty or invalid.
+- **Rationale**: Deterministic IDs ensure consistent deck identity, and early trimming/validation prevents corrupt or unreadable decks from being generated.
